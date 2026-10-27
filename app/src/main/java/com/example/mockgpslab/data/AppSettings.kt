@@ -3,6 +3,7 @@ package com.example.mockgpslab.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -49,6 +50,13 @@ class AppSettings(private val store: DataStore<Preferences>) {
         store.edit { it[ACCURACY] = meters }
     }
 
+    /** Also mock through Google Play services' Fused provider (see FusedMockController). Off by default. */
+    val fusedEnabled: Flow<Boolean> = data.map { it[FUSED] ?: false }.distinctUntilChanged()
+
+    suspend fun saveFusedEnabled(enabled: Boolean) {
+        store.edit { it[FUSED] = enabled }
+    }
+
     val savedPlaces: Flow<List<SavedPlace>> = data
         .map { SavedPlacesCodec.decode(it[PLACES]) }
         .distinctUntilChanged()
@@ -69,6 +77,7 @@ class AppSettings(private val store: DataStore<Preferences>) {
 
     private companion object {
         val PLACES = stringPreferencesKey("saved_places")
+        val FUSED = booleanPreferencesKey("fused_enabled")
         val LAT = doublePreferencesKey("selected_lat")
         val LON = doublePreferencesKey("selected_lon")
         val ACCURACY = floatPreferencesKey("accuracy_m")

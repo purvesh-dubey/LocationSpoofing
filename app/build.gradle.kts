@@ -57,6 +57,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.osmdroid.android)
+    // Optional Fused mock (step 1.6). Only reached when the user turns the toggle on and Play Services exists.
+    implementation(libs.play.services.location)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

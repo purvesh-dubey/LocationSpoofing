@@ -21,6 +21,7 @@ import com.example.mockgpslab.MainActivity
 import com.example.mockgpslab.MockGpsLabApplication
 import com.example.mockgpslab.R
 import com.example.mockgpslab.data.GeoPoint
+import com.example.mockgpslab.fused.FusedMockController
 import com.example.mockgpslab.mock.EngineState
 import com.example.mockgpslab.mock.LocationManagerBackend
 import com.example.mockgpslab.mock.MockLocationEngine
@@ -47,6 +48,10 @@ class MockLocationService : Service() {
     private lateinit var engine: MockLocationEngine
     private lateinit var notificationManager: NotificationManager
 
+    /** Only non-null while the optional Fused mock is switched on. Written on start, read from the engine's loop. */
+    @Volatile
+    private var fused: FusedMockController? = null
+
     override fun onCreate() {
         super.onCreate()
         notificationManager = getSystemService(NotificationManager::class.java)
@@ -58,6 +63,7 @@ class MockLocationService : Service() {
             providers = MockProviders.forSdk(Build.VERSION.SDK_INT),
             clock = SystemMockClock,
             log = { Log.w(TAG, it) },
+            onFix = { fix -> fused?.push(fix) },
         )
         container.session.setServiceRunning(true)
 
@@ -90,6 +96,13 @@ class MockLocationService : Service() {
 
         scope.launch {
             val settings = container.settings
+            if (settings.fusedEnabled.first()) {
+                fused = FusedMockController(
+                    context = applicationContext,
+                    onState = container.session::setFusedState,
+                    log = { Log.w(TAG, it) },
+                ).also { it.enable() }
+            }
             engine.start(settings.selectedPoint.first(), settings.accuracyMeters.first())
             // While running, follow whatever the user picks next. The same flow also fires once more with
             // the current value, which is harmless: updateTarget with the same point is a no-op.
@@ -123,6 +136,8 @@ class MockLocationService : Service() {
         // The one guaranteed cleanup point: unregister every test provider, then stop the loop's scope.
         val finalState = engine.state.value
         engine.stop()
+        fused?.disable()
+        fused = null
         scope.cancel()
         // engine.stop() reports Idle, but if we are dying BECAUSE of an error, keep that visible to the UI.
         container.session.setEngineState(

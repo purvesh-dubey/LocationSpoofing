@@ -10,6 +10,7 @@ import com.example.mockgpslab.MockGpsLabApplication
 import com.example.mockgpslab.data.CoordinateForm
 import com.example.mockgpslab.data.GeoPoint
 import com.example.mockgpslab.data.SavedPlace
+import com.example.mockgpslab.fused.FusedMockController
 import com.example.mockgpslab.mock.LocationManagerBackend
 import com.example.mockgpslab.mock.MockAppProbe
 import com.example.mockgpslab.mock.MockAppStatus
@@ -52,6 +53,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val savedPlaces: StateFlow<List<SavedPlace>> =
         settings.savedPlaces.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val fusedEnabled: StateFlow<Boolean> =
+        settings.fusedEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /** Checked once; Play services can't appear or vanish while the screen is open in any way we care about. */
+    val playServicesAvailable: Boolean = FusedMockController.isPlayServicesAvailable(application)
+
+    fun setFusedEnabled(enabled: Boolean) {
+        viewModelScope.launch { settings.saveFusedEnabled(enabled) }
+    }
 
     private val _mockStatus = MutableStateFlow(MockAppStatus.Unknown)
     val mockStatus: StateFlow<MockAppStatus> = _mockStatus.asStateFlow()

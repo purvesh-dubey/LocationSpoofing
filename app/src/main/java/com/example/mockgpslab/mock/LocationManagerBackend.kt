@@ -67,21 +67,8 @@ class LocationManagerBackend(private val locationManager: LocationManager) : Moc
     override fun setTestProviderEnabled(provider: String, enabled: Boolean) =
         locationManager.setTestProviderEnabled(provider, enabled)
 
-    override fun setTestProviderLocation(provider: String, fix: MockFix) {
-        val location = Location(provider).apply {
-            latitude = fix.latitude
-            longitude = fix.longitude
-            accuracy = fix.accuracyMeters
-            altitude = fix.altitudeMeters
-            speed = fix.speedMetersPerSecond
-            bearing = fix.bearingDegrees
-            // Both timestamps are required: API 31+ rejects "incomplete" mock locations, and consumers use
-            // elapsedRealtimeNanos to judge how fresh a fix is.
-            time = fix.timeMillis
-            elapsedRealtimeNanos = fix.elapsedRealtimeNanos
-        }
-        locationManager.setTestProviderLocation(provider, location)
-    }
+    override fun setTestProviderLocation(provider: String, fix: MockFix) =
+        locationManager.setTestProviderLocation(provider, fix.toLocation(provider))
 
     override fun removeTestProvider(provider: String) = locationManager.removeTestProvider(provider)
 }
@@ -90,4 +77,20 @@ class LocationManagerBackend(private val locationManager: LocationManager) : Moc
 object SystemMockClock : MockClock {
     override fun currentTimeMillis() = System.currentTimeMillis()
     override fun elapsedRealtimeNanos() = SystemClock.elapsedRealtimeNanos()
+}
+
+/**
+ * Builds the android.location.Location for a fix. Shared by the LocationManager and Fused mock paths.
+ * Both timestamps are required: API 31+ rejects "incomplete" mock locations, and consumers use
+ * elapsedRealtimeNanos to judge how fresh a fix is.
+ */
+fun MockFix.toLocation(provider: String): Location = Location(provider).apply {
+    latitude = this@toLocation.latitude
+    longitude = this@toLocation.longitude
+    accuracy = accuracyMeters
+    altitude = altitudeMeters
+    speed = speedMetersPerSecond
+    bearing = bearingDegrees
+    time = timeMillis
+    elapsedRealtimeNanos = this@toLocation.elapsedRealtimeNanos
 }

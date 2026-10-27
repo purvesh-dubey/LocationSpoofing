@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,6 +45,7 @@ import com.example.mockgpslab.data.Parsed
 import com.example.mockgpslab.data.Presets
 import com.example.mockgpslab.data.SavedPlace
 import com.example.mockgpslab.data.errorOrNull
+import com.example.mockgpslab.fused.FusedState
 import com.example.mockgpslab.mock.EngineState
 import com.example.mockgpslab.mock.MockAppStatus
 import com.example.mockgpslab.mock.SystemReading
@@ -64,6 +66,8 @@ fun MainScreen(
     val mockStatus by viewModel.mockStatus.collectAsStateWithLifecycle()
     val places by viewModel.savedPlaces.collectAsStateWithLifecycle()
     val report by viewModel.report.collectAsStateWithLifecycle()
+    val fusedEnabled by viewModel.fusedEnabled.collectAsStateWithLifecycle()
+    val fusedState by viewModel.session.fusedState.collectAsStateWithLifecycle()
     val permissions = rememberPermissionController()
 
     // Re-probe whenever we return to the foreground, e.g. after picking the app in Developer Options.
@@ -135,6 +139,14 @@ fun MainScreen(
                 onDelete = viewModel::deletePlace,
                 onSaveCurrent = { showSaveDialog = true },
                 canSave = form.point != null,
+            )
+
+            FusedCard(
+                enabled = fusedEnabled,
+                available = viewModel.playServicesAvailable,
+                state = fusedState,
+                running = running,
+                onToggle = viewModel::setFusedEnabled,
             )
 
             Button(
@@ -285,5 +297,35 @@ private fun ReportLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
         Text(value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** Step 1.6: the optional Google Play services path. Explained in the README; this is the card for it. */
+@Composable
+private fun FusedCard(enabled: Boolean, available: Boolean, state: FusedState, running: Boolean, onToggle: (Boolean) -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Also mock Google Play services", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Most real apps, Google Maps included, read location through Play services' " +
+                            "FusedLocationProviderClient rather than LocationManager. Turn this on so they see the mock too.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Switch(checked = enabled, onCheckedChange = onToggle, enabled = available)
+            }
+            val status = when {
+                !available -> "Google Play services is not available on this device, so this option is disabled."
+                state is FusedState.Active -> "Active: Play services is reporting the mock."
+                state is FusedState.Failed -> "Play services refused: ${state.message}. The standard mock still works."
+                state is FusedState.Unavailable -> "Play services unavailable. The standard mock still works."
+                running && enabled -> "Starting…"
+                enabled -> "Takes effect the next time you press Start."
+                else -> "Off."
+            }
+            Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
