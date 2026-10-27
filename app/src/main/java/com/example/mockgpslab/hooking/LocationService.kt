@@ -50,6 +50,14 @@ class DemoClientApp(private val registry: ServiceRegistry) {
     /** Read-only peek for the Hooking Lab UI, so it can explain the stale-cache problem. Not used by the logic. */
     val hasCachedService: Boolean get() = locationService != null
 
+    /**
+     * Read-only peek for the Hooking Lab UI: is the service this client cached the one the registry serves right now?
+     * False means the client holds a stale copy (it cached before the hook was installed or removed). A client that
+     * has cached nothing yet, or cached the proxy straight from the registry, is not stale.
+     */
+    val cacheMatchesRegistry: Boolean
+        get() = locationService?.let { it === registry.get(ServiceRegistry.LOCATION) } ?: true
+
     fun whereAmI(provider: String = "gps"): GeoPoint? = service().getLastKnownLocation(provider)
 
     fun isGpsEnabled(): Boolean = service().isProviderEnabled("gps")

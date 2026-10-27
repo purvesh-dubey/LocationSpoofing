@@ -34,14 +34,25 @@ data class LabUiState(
     val hookOn: Boolean = false,
     val patchCachedField: Boolean = true,
     val clientHasCachedService: Boolean = false,
+    val clientCacheMatchesRegistry: Boolean = true,
     val patchedFields: Int = 0,
     val real: LabResult? = null,
     val hooked: LabResult? = null,
     val realGpsEnabled: Boolean? = null,
     val hookedGpsEnabled: Boolean? = null,
 ) {
-    /** The hook is installed but the client is still talking to the original: the lesson of step 2.4. */
-    val clientIsStale: Boolean get() = hookOn && clientHasCachedService && patchedFields == 0
+    /**
+     * The hook is installed but the client is still talking to a service it cached earlier: the lesson of step 2.4.
+     * Asks the client rather than guessing from the patch count, because a fresh client ("New client app") has a
+     * cache too but it holds the proxy.
+     */
+    val clientIsStale: Boolean get() = hookOn && clientHasCachedService && !clientCacheMatchesRegistry
+
+    /**
+     * The mirror image: the hook was removed, but this client cached the proxy while it was on. Only fields we
+     * patched are restored on uninstall, so a client that fetched the proxy itself keeps it until it "restarts".
+     */
+    val clientKeepsRemovedHook: Boolean get() = !hookOn && clientHasCachedService && !clientCacheMatchesRegistry
 }
 
 /**
@@ -119,6 +130,7 @@ class HookingLabViewModel(application: Application) : AndroidViewModel(applicati
                     realGpsEnabled = realEnabled,
                     hookedGpsEnabled = hookedEnabled,
                     clientHasCachedService = client.hasCachedService,
+                    clientCacheMatchesRegistry = client.cacheMatchesRegistry,
                 )
             }
         }

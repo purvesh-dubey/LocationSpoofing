@@ -50,7 +50,9 @@ ticks, but in short:
 
 1. **Unlock Developer Options.** Settings > About phone > tap **Build number** 7 times (enter your screen lock).
 2. **Select the mock app.** Settings > System > Developer options > **Select mock location app** > *Mock GPS Lab*.
-   The app's **Open Developer Options** button jumps there. Only one app can hold this role at a time.
+   The app's **Open Developer Options** button jumps there (if Android answers "Please enable developer options
+   first", do step 1). The entry sits under the **Location** heading, far down a long list; the search icon at the top
+   (type `mock`) finds it. Only one app can hold this role at a time.
 3. **Grant location permission** (choose *Precise* if asked) and **allow notifications** when the app asks.
 4. Open the app, pick a point, press **Start mock location**.
 
@@ -101,7 +103,8 @@ On a real device (these are the checks that can't be done from a build server):
       it should show the fake coordinates.
 - [ ] **`adb shell dumpsys location`**: see below.
 - [ ] **Stop**: the notification disappears, and `dumpsys location` no longer shows `[mock]` providers; real
-      location returns after a moment.
+      location returns after a moment. Android keeps handing out the last mock fix from its cache for a short while
+      (about 45 s on the emulator), so give *What the system reports* a minute before judging it.
 - [ ] **Deselect the app** under *Select mock location app* while running: the service stops and the status card
       reports "Selected as mock app: No". Expect Android to keep serving the last fake fix until you re-select the
       app and press Start then Stop once (see the first gotcha below).
@@ -116,10 +119,14 @@ While running you should see lines like these (this is real output from the Andr
 
 ```
 network provider [mock]:
-  last location=Location[network 25.594100,85.137600 hAcc=5.0 ... mock]
   identity=10175/com.example.mockgpslab
+  last mock location=Location[network 25.594100,85.137600 hAcc=5.0 ... mock]
+fused provider [mock]:
+  identity=10175/com.example.mockgpslab
+  last mock location=Location[fused 25.594100,85.137600 hAcc=5.0 ... mock]
 gps provider [mock]:
-  last location=Location[gps 25.594100,85.137600 hAcc=5.0 ... mock]
+  identity=10175/com.example.mockgpslab
+  last mock location=Location[gps 25.594100,85.137600 hAcc=5.0 ... mock]
 ```
 
 `identity=` names the app that owns the test provider. After Stop there should be no `[mock]` sections.
@@ -134,6 +141,12 @@ Run on a Pixel 6 AVD (Android 13, Google APIs), not on a phone:
 - **Google Maps** put the blue dot at the chosen point (Patna, then Mumbai), with the Fused toggle on and with it off.
 - **Camera**: with *Location tags* ticked, a photo's EXIF GPS was exactly the selected point (25.59410, 85.13760).
 - Un-selecting the mock app mid-run, and recovering with one Start/Stop (see the first gotcha below).
+- **Setup done the way a phone does it, with no `adb` shortcuts:** the real permission dialogs (Precise location,
+  notifications), unlocking Developer Options by tapping *Build number* 7 times, and picking the app in the system's
+  *Select mock location app* list (it lists only apps that declare `ACCESS_MOCK_LOCATION`, so it showed just this one).
+- **Hooking Lab:** stale cache (hook on, patching off, Hooked unchanged), the reflection fix, *New client app*, the live
+  call log, the hook answering with the point selected on the main screen, and a missing location permission (Real shows
+  "No location permission", Hooked still answers, no crash).
 
 ## Sending builds to testers
 
@@ -146,7 +159,7 @@ setup (three repository secrets) and troubleshooting: [docs/firebase-distributio
 ./gradlew testDebugUnitTest
 ```
 
-94 plain-JVM tests, no emulator needed:
+97 plain-JVM tests, no emulator needed:
 
 - Coordinate parsing/validation, the form's paste-a-pair behaviour, saved-places encoding.
 - `MockLocationEngine` against a fake backend with coroutine virtual time: provider add/remove order, one push per

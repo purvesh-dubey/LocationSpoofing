@@ -114,6 +114,43 @@ class HookInstallerTest {
     }
 
     @Test
+    fun `cacheMatchesRegistry flags a client that cached before the hook until it is patched`() {
+        val client = DemoClientApp(registry)
+        assertTrue("nothing cached yet, nothing stale", client.cacheMatchesRegistry)
+        client.whereAmI() // caches the original
+        assertTrue("cached the original and the registry still serves it", client.cacheMatchesRegistry)
+
+        val installation = HookInstaller.installLocationHook(registry, { fake }, log)
+        assertFalse("registry now serves the proxy but the client kept the original", client.cacheMatchesRegistry)
+
+        installation.patchCachedReferences(client)
+        assertTrue(client.cacheMatchesRegistry)
+    }
+
+    @Test
+    fun `cacheMatchesRegistry is true for a client that cached the proxy straight from the registry`() {
+        HookInstaller.installLocationHook(registry, { fake }, log)
+        val client = DemoClientApp(registry) // "New client app": created after the hook
+        client.whereAmI()
+        assertTrue(client.hasCachedService)
+        assertTrue("a fresh client is not stale even though nothing was patched", client.cacheMatchesRegistry)
+    }
+
+    @Test
+    fun `a client that fetched the proxy itself keeps it after uninstall until it restarts`() {
+        val installation = HookInstaller.installLocationHook(registry, { fake }, log)
+        val client = DemoClientApp(registry)
+        assertEquals(fake, client.whereAmI()) // cached the proxy from the registry; nothing was patched
+
+        installation.uninstall()
+
+        assertSame("registry is back to the original", stub, registry.get(ServiceRegistry.LOCATION))
+        assertFalse("but this client still holds the proxy", client.cacheMatchesRegistry)
+        assertEquals("so it is still hooked", fake, client.whereAmI())
+        assertEquals("a restarted client is not", real, DemoClientApp(registry).whereAmI())
+    }
+
+    @Test
     fun `patching a client that has not cached anything yet changes nothing`() {
         val installation = HookInstaller.installLocationHook(registry, { fake }, log)
         val client = DemoClientApp(registry) // field still null

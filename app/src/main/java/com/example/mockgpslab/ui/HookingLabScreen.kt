@@ -108,6 +108,20 @@ fun HookingLabScreen(onBack: () -> Unit, viewModel: HookingLabViewModel = viewMo
                 }
             }
 
+            if (state.clientKeepsRemovedHook) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Hook removed, client unchanged", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "The registry is back to the original, but this client cached the proxy while the hook was " +
+                                "on, so it keeps answering with it until it restarts. Tap \"New client app\", the demo's " +
+                                "version of restarting the app.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ResultCard(
                     "Real",
@@ -169,7 +183,8 @@ fun HookingLabScreen(onBack: () -> Unit, viewModel: HookingLabViewModel = viewMo
                         "1. Hook off, Query: the client looks the service up and caches it.\n" +
                             "2. Hook on with patching off, Query: Hooked still shows the real value (stale cache).\n" +
                             "3. Switch patching on: the Hooked column changes to your selected point.\n" +
-                            "4. Pick another place on the main screen and Query again: the hook follows it.\n" +
+                            "4. Go back, pick another place, return and repeat 2-3: the hook answers with the new point " +
+                            "(leaving this screen resets the demo, but the point is read live from the same store).\n" +
                             "Tip: start the mock on the main screen first, or the real column may have no fix to show.",
                         style = MaterialTheme.typography.bodySmall,
                     )
