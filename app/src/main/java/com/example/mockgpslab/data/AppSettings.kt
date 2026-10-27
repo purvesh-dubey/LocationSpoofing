@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.mockgpslab.mock.MockLocationEngine
 import kotlinx.coroutines.flow.Flow
@@ -48,7 +49,26 @@ class AppSettings(private val store: DataStore<Preferences>) {
         store.edit { it[ACCURACY] = meters }
     }
 
+    val savedPlaces: Flow<List<SavedPlace>> = data
+        .map { SavedPlacesCodec.decode(it[PLACES]) }
+        .distinctUntilChanged()
+
+    suspend fun addPlace(place: SavedPlace) {
+        store.edit { prefs ->
+            val current = SavedPlacesCodec.decode(prefs[PLACES])
+            prefs[PLACES] = SavedPlacesCodec.encode(current + place)
+        }
+    }
+
+    suspend fun deletePlace(place: SavedPlace) {
+        store.edit { prefs ->
+            val current = SavedPlacesCodec.decode(prefs[PLACES])
+            prefs[PLACES] = SavedPlacesCodec.encode(current - place)
+        }
+    }
+
     private companion object {
+        val PLACES = stringPreferencesKey("saved_places")
         val LAT = doublePreferencesKey("selected_lat")
         val LON = doublePreferencesKey("selected_lon")
         val ACCURACY = floatPreferencesKey("accuracy_m")
