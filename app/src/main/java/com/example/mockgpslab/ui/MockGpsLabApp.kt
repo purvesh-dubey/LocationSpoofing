@@ -1,6 +1,14 @@
 package com.example.mockgpslab.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Button
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.mockgpslab.MockGpsLabApplication
+import com.example.mockgpslab.service.MockLocationController
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -29,7 +37,7 @@ fun MockGpsLabApp() {
         NavHost(nav, startDestination = Routes.MAIN, modifier = Modifier.padding(padding)) {
             composable(Routes.MAIN) {
                 // Temporary: the real Main screen arrives in step 1.5; this proves the permission flow end to end.
-                Column(Modifier.padding(16.dp)) { PermissionsCard(rememberPermissionController()) }
+                TemporaryServiceControls()
             }
             composable(Routes.SETUP) { Placeholder("Setup checklist") }
             composable(Routes.HOOKING_LAB) { Placeholder("Hooking Lab (Phase 2)") }
@@ -40,4 +48,20 @@ fun MockGpsLabApp() {
 @Composable
 private fun Placeholder(title: String) {
     Box(Modifier, contentAlignment = Alignment.Center) { Text(title) }
+}
+
+@Composable
+private fun TemporaryServiceControls() {
+    val context = LocalContext.current
+    val session = (context.applicationContext as MockGpsLabApplication).container.session
+    val engineState by session.engineState.collectAsStateWithLifecycle()
+    val permissions = rememberPermissionController()
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        PermissionsCard(permissions)
+        Text("Engine: $engineState")
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(onClick = { MockLocationController.start(context) }, enabled = permissions.status.anyLocation) { Text("Start") }
+            Button(onClick = { MockLocationController.stop(context) }) { Text("Stop") }
+        }
+    }
 }

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mock GPS Lab</string>
+    <string name="notification_channel_name">Mock location</string>
+    <string name="notification_channel_description">Shown while a mock location is being reported to the system.</string>
+    <string name="notification_active">Mock location active: %1$s</string>
+    <string name="notification_starting">Starting mock location…</string>
+    <string name="notification_stop">Stop</string>
 </resources>
