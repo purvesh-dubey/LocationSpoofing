@@ -16,11 +16,29 @@ android {
         minSdk = 26
         // targetSdk is a plain integer in the manifest, so it cannot express the 36.1 minor release.
         targetSdk = 36
-        versionCode = 1
+        // CI passes -PciVersionCode=<run number> so every uploaded build is newer than the last.
+        versionCode = (project.findProperty("ciVersionCode") as String?)?.toInt() ?: 1
         versionName = "1.0"
     }
 
+    // CI builds are signed with the same key every time (restored from a GitHub secret), otherwise the phone
+    // rejects updates with "package conflicts". The file is gitignored and only exists on CI.
+    signingConfigs {
+        val ciKeystore = file("ci-debug.keystore")
+        if (ciKeystore.exists()) {
+            create("ci") {
+                storeFile = ciKeystore
+                storePassword = System.getenv("CI_KEYSTORE_PASSWORD")
+                keyAlias = "ci"
+                keyPassword = System.getenv("CI_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfigs.findByName("ci")?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = false
         }

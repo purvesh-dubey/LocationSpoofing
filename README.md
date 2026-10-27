@@ -135,6 +135,11 @@ Run on a Pixel 6 AVD (Android 13, Google APIs), not on a phone:
 - **Camera**: with *Location tags* ticked, a photo's EXIF GPS was exactly the selected point (25.59410, 85.13760).
 - Un-selecting the mock app mid-run, and recovering with one Start/Stop (see the first gotcha below).
 
+## Sending builds to testers
+
+Every push to `main` is built by GitHub Actions and emailed to the Firebase App Distribution group `me`. One-time
+setup (three repository secrets) and troubleshooting: [docs/firebase-distribution.md](docs/firebase-distribution.md).
+
 ## Tests
 
 ```bash
