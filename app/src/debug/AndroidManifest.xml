@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Only debug builds may ask for mock locations, so release builds of this app can never mock.
+      It is a "development" permission: it can't be granted through a runtime dialog. Instead the user picks
+      this app under Developer Options > "Select mock location app".
+
+      tools:ignore: lint's MockLocation check is meant to accept this file, but with AGP 9.2 / lint 32.2 it
+      compares the *merged* manifest against the debug source set and still reports it. The suppression is
+      scoped to this single element, so the check keeps guarding src/main/AndroidManifest.xml.
+    -->
+    <uses-permission
+        android:name="android.permission.ACCESS_MOCK_LOCATION"
+        tools:ignore="MockLocation" />
+</manifest>
