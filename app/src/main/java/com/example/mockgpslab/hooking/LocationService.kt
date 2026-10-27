@@ -27,7 +27,7 @@ class ServiceRegistry {
     fun <T : Any> get(name: String, type: Class<T>): T {
         val service = services[name] ?: error("No service registered under '$name'")
         check(type.isInstance(service)) { "Service '$name' is a ${service.javaClass.name}, not a ${type.name}" }
-        return type.cast(service)
+        return checkNotNull(type.cast(service))
     }
 
     companion object {
@@ -46,6 +46,9 @@ class DemoClientApp(private val registry: ServiceRegistry) {
 
     private fun service(): LocationService =
         locationService ?: registry.get(ServiceRegistry.LOCATION, LocationService::class.java).also { locationService = it }
+
+    /** Read-only peek for the Hooking Lab UI, so it can explain the stale-cache problem. Not used by the logic. */
+    val hasCachedService: Boolean get() = locationService != null
 
     fun whereAmI(provider: String = "gps"): GeoPoint? = service().getLastKnownLocation(provider)
 
