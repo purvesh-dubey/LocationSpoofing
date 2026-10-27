@@ -69,4 +69,5 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           groups: me
           file: app/build/outputs/apk/debug/app-debug.apk
-          releaseNotes: ${{ github.event.head_commit.message || format('Manual run #{0}', github.run_number) }}
+          # Quoted, and no "#" inside: in YAML a " #" starts a comment and silently cuts the expression short.
+          releaseNotes: "${{ github.event.head_commit.message || format('Manual run {0}', github.run_number) }}"
