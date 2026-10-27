@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws everything; this theme only supplies the window background and status bar behaviour. -->
+    <style name="Theme.MockGpsLab" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

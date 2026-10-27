@@ -1,0 +1,19 @@
+# Gradle / build output
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Machine-specific (contains the SDK path)
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+.kotlin/
+captures/
+*.hprof
+
+# Signing material should never be committed
+*.jks
+*.keystore
