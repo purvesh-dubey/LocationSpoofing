@@ -39,7 +39,7 @@ object Hooks {
         }
         val builder = HookBuilder(iface).apply(configure)
         val handler = LoggingInvocationHandler(target, log, builder.interceptors, label = iface.simpleName)
-        return iface.cast(Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), handler))
+        return checkNotNull(iface.cast(Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), handler)))
     }
 
     /** True if [service] is a proxy created by [wrap]. */
