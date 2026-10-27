@@ -309,8 +309,9 @@ private fun FusedCard(enabled: Boolean, available: Boolean, state: FusedState, r
                 Column(Modifier.weight(1f)) {
                     Text("Also mock Google Play services", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Most real apps, Google Maps included, read location through Play services' " +
-                            "FusedLocationProviderClient rather than LocationManager. Turn this on so they see the mock too.",
+                        "Most real apps read location through Play services' FusedLocationProviderClient. " +
+                            "It normally picks up the standard mock by itself (Maps did in testing); turn this on to " +
+                            "feed Play services directly if an app doesn't follow.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }

@@ -79,10 +79,12 @@ adb shell pm grant com.example.mockgpslab android.permission.POST_NOTIFICATIONS
 ### About the Fused (Play services) toggle
 
 Most real apps, Google Maps included, don't call `LocationManager`; they use Google Play services'
-`FusedLocationProviderClient`. That client has its own mock switch (`setMockMode` / `setMockLocation`), and the
-toggle drives it so those apps see the mock too. **This is the path most real apps use**, so turn it on when testing
-anything Google-based. It needs Play services; without it the toggle is disabled and the standard mock still works.
-Changing the toggle takes effect the next time you press Start.
+`FusedLocationProviderClient`. **That is the path most real apps use.** Play services normally consumes the platform's
+`gps`/`network` providers, so the standard mock usually reaches those apps by itself: on the Android 13 emulator,
+Google Maps followed the mock with this toggle **off**. The toggle is a second, explicit route: it calls
+`setMockMode(true)` / `setMockLocation(...)` on Play services directly, for apps or devices where the standard mock
+alone doesn't get through (try it if an app ignores you). It needs Play services; without it the toggle is disabled
+and the standard mock still works. Changing the toggle takes effect the next time you press Start.
 
 ## Manual test checklist
 
@@ -91,8 +93,10 @@ On a real device (these are the checks that can't be done from a build server):
 - [ ] **Setup screen**: steps 1-4 all show a tick.
 - [ ] **In-app panel**: Start the mock, tap *Check now* under *What the system reports*. Expect your point, provider
       `gps`, **Flagged as mock: Yes**, accuracy 5.0 m.
-- [ ] **Google Maps** (turn on *Also mock Google Play services* first, then Start): the blue dot jumps to the
-      chosen point. Pick another place in this app; the dot follows within a few seconds.
+- [ ] **Google Maps**: Start the mock, then open Maps; the blue dot should be at the chosen point. Pick another
+      place here and the dot follows. Try it with *Also mock Google Play services* **off** first; turn it on if Maps
+      doesn't follow. If Maps was already open (or you only just gave it location permission), force-stop and reopen it:
+      it caches its last location and may not re-centre on its own.
 - [ ] **Camera geotag**: in the camera app enable *Location tags* / *Save location*, take a photo, open its details;
       it should show the fake coordinates.
 - [ ] **`adb shell dumpsys location`**: see below.
@@ -119,6 +123,17 @@ gps provider [mock]:
 ```
 
 `identity=` names the app that owns the test provider. After Stop there should be no `[mock]` sections.
+
+### Already verified on the emulator
+
+Run on a Pixel 6 AVD (Android 13, Google APIs), not on a phone:
+
+- Start / live point change / Stop / notification Stop, and `dumpsys location` showing three `[mock]` providers
+  that disappear afterwards.
+- The in-app "What the system reports" panel: your point, provider `gps`, flagged as mock.
+- **Google Maps** put the blue dot at the chosen point (Patna, then Mumbai), with the Fused toggle on and with it off.
+- **Camera**: with *Location tags* ticked, a photo's EXIF GPS was exactly the selected point (25.59410, 85.13760).
+- Un-selecting the mock app mid-run, and recovering with one Start/Stop (see the first gotcha below).
 
 ## Tests
 

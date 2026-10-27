@@ -72,9 +72,13 @@ location permission is already granted, which is why Start is disabled until it 
 ### The other road: Google Play services' fused provider
 
 Most real apps (Google Maps included) don't call `LocationManager`. They use `FusedLocationProviderClient` from
-Google Play services, which blends GPS, Wi-Fi and cell data *inside Play services*. It has its own mock switch:
-`setMockMode(true)` followed by `setMockLocation(...)`. The optional toggle (`FusedMockController`) uses it. It
-needs the same Developer Options opt-in.
+Google Play services, which blends GPS, Wi-Fi and cell data *inside Play services*. Play services also listens to
+the platform's `gps`/`network` providers as inputs, which is why the plain `LocationManager` mock usually flows
+through to those apps anyway (on the Android 13 emulator, Maps followed it with the toggle off).
+
+Play services additionally has its own, explicit mock switch: `setMockMode(true)` followed by `setMockLocation(...)`.
+The optional toggle (`FusedMockController`) uses it, so the mock no longer depends on how Play services chooses to
+weigh the platform providers. It needs the same Developer Options opt-in.
 
 ### What `adb shell dumpsys location` shows
 
